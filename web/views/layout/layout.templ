@@ -1,8 +1,8 @@
 package layout
 
-type BaseProps struct {
-	Title string
-}
+import "workshop/web/views/components"
+
+type BaseProps struct{ Title, Active string }
 
 templ Base(props BaseProps) {
 	<!DOCTYPE html>
@@ -10,14 +10,67 @@ templ Base(props BaseProps) {
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<title>{ props.Title }</title>
+			<meta name="theme-color" content="#183c30"/>
+			<meta name="description" content="A closer look at our wild world. Explore wildlife sightings, discover remarkable animals, and follow their stories across the map."/>
+			<title>{ props.Title + " · Wildlens" }</title>
+			<link rel="icon" href="/assets/images/mark.svg" type="image/svg+xml"/>
+			<link rel="stylesheet" href="/assets/vendor/leaflet/leaflet.css"/>
 			<link rel="stylesheet" href="/assets/css/app.css"/>
+			<script src="/assets/vendor/leaflet/leaflet.js" defer></script>
+			<script src="/assets/js/app.js" defer></script>
 		</head>
 		<body>
-			<main class="container">
-				{ children... }
-			</main>
-			<script src="/assets/js/app.js"></script>
+			<a class="skip-link" href="#main">Skip to content</a>
+			<aside class="sidebar">
+				<a href="/" class="brand" aria-label="Wildlens home">
+					<span class="brand-mark">
+						@components.Icon("leaf")
+					</span> wildlens<span class="brand-dot">.</span>
+				</a>
+				<p class="nav-caption">YOUR FIELD GUIDE</p>
+				<nav aria-label="Main navigation">
+					@NavLink("/", "dashboard", "Overview", props.Active)
+					@NavLink("/sightings", "compass", "Sightings", props.Active)
+					@NavLink("/map", "map", "Explore map", props.Active)
+					@NavLink("/gallery", "gallery", "Animal gallery", props.Active)
+					@NavLink("/statistics", "chart", "Statistics", props.Active)
+				</nav>
+				<div class="sidebar-bottom">
+					<div class="field-note">
+						@components.Icon("globe")
+						<p>A little curiosity.<br/><strong>A wilder world.</strong></p><span>Every sighting tells a story.<br/>Go discover one.</span>
+					</div>
+					<div class="sidebar-source"><span class="status-dot"></span> Powered by open biodiversity data</div>
+				</div>
+			</aside>
+			<div class="workspace">
+				<header class="topbar">
+					<div class="breadcrumb">Field journal <span>/</span> <strong>{ props.Title }</strong></div>
+					<div class="topbar-actions">
+						<button type="button" class="motion-toggle icon-button" aria-label="Pause 3D animations" aria-pressed="false" title="Pause 3D animations">
+							@components.Icon("spark")
+						</button><span class="topbar-divider"></span><span class="explorer-avatar">E</span><span class="explorer-label">Wildlife explorer</span>
+					</div>
+				</header>
+				<main id="main" class="main-content">
+					{ children... }
+				</main>
+				<footer class="site-footer"><span>Made for the love of the wild.</span><span><a href="https://www.gbif.org" target="_blank" rel="noopener noreferrer">GBIF</a><span>· </span><a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo</a><span>/ Wildlife, in perspective.</span></span></footer>
+			</div>
 		</body>
 	</html>
+}
+
+templ NavLink(href string, icon string, label string, active string) {
+	<a href={ templ.URL(href) } class={ "nav-link", templ.KV("is-active",active==href) } aria-current={ current(active == href) }>
+		@components.Icon(icon)
+		<span>{ label }</span><span class="nav-arrow">↗</span>
+	</a>
+}
+
+func current(active bool) string {
+	if active {
+		return "page"
+	}
+	return "false"
 }

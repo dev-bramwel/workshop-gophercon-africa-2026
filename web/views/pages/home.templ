@@ -1,27 +1,611 @@
 package pages
 
 import (
+	"fmt"
 	"workshop/internal/domain/sighting"
 	"workshop/web/views/components"
 	"workshop/web/views/layout"
 )
 
-templ Home(sightings []sighting.Sighting) {
-	@layout.Base(layout.BaseProps{
-		Title: "Sightings",
-	}) {
-		<h1>Sightings</h1>
-		if len(sightings) == 0 {
-			<p>No sightings have been ingested yet.</p>
+templ CollectionPage(d Collection) {
+	@layout.Base(layout.BaseProps{Title: pageTitle(d.Path), Active: d.Path}) {
+		if d.Path == "/" {
+			@Dashboard(d)
 		} else {
-			<p>Total: { len(sightings) }</p>
-			<ul class="sightings">
-				for _, s := range sightings {
-					<li>
-						@components.SightingCard(s)
-					</li>
-				}
-			</ul>
+			<div class="page-heading">
+				<div>
+					<p class="eyebrow">
+						{ pageEyebrow(d.Path) }
+					</p>
+					<h1>
+						{ pageTitle(d.Path) }
+						<span class="accent-dot">.</span>
+					</h1>
+					<p class="page-description">
+						{ pageDescription(d.Path) }
+					</p>
+				</div>
+				<span class="record-pill">
+					<span class="status-dot"></span>{ Number(d.Summary.Sightings) } sightings in view
+				</span>
+			</div>
+			@Filters(d)
+			switch d.Path {
+				case "/sightings":
+					<div class="section-heading">
+						<p>
+							<strong>
+								{ Number(d.Summary.Sightings) }
+							</strong> sightings to explore
+						</p>
+						<span class="muted">
+							Page { d.Page } of { d.Pages }
+						</span>
+					</div>
+					if len(d.Items)==0 {
+						@EmptyState()
+					} else {
+						<div class="sighting-grid">
+							for _,s:=range d.Visible {
+								@SightingTile(s)
+							}
+						</div>
+						@Pagination(d)
+					}
+				case "/gallery":
+					<div class="section-heading">
+						<p>
+							<strong>
+								{ len(d.Species) }
+							</strong> animals. Countless stories.
+						</p>
+						<span class="muted">Select an animal to get to know it</span>
+					</div>
+					if len(d.Species)==0 {
+						@EmptyState()
+					} else {
+						<div class="animal-grid">
+							for _,a:=range d.Species {
+								@AnimalTile(a)
+							}
+						</div>
+					}
+				case "/map":
+					<div class="panel map-page-panel">
+						<div class="panel-heading">
+							<div>
+								<h2>The wild, around the world</h2>
+								<p>Each marker is an observation. Select one to see its story.</p>
+							</div>
+							<span class="map-key">
+								<i></i> Sighting
+							</span>
+						</div>
+						@SightingMap(d.Items, "full-map")
+					</div>
+					<div class="map-records">
+						<h2>On the map</h2>
+						<p class="muted">Browse the same records below, including when map tiles are unavailable.</p>
+						<div class="sighting-grid">
+							for _,s:=range d.Visible {
+								@SightingTile(s)
+							}
+						</div>
+						@Pagination(d)
+					</div>
+				case "/statistics":
+					@Statistics(d)
+			}
 		}
 	}
+}
+
+templ Dashboard(d Collection) {
+	<div class="page-heading">
+		<div>
+			<p class="eyebrow">A CLOSER LOOK AT OUR WILD WORLD</p>
+			<h1>
+				Welcome to the wild<span class="accent-dot">.</span>
+			</h1>
+			<p class="page-description">Extraordinary animals. Real encounters. A world waiting to be explored.</p>
+		</div>
+		<a class="button button-light" href="/map">
+			@components.Icon("map")
+			Explore the map
+			@components.Icon("arrow-up")
+		</a>
+	</div>
+	<section class="hero" data-tilt data-hero-carousel role="region" aria-roledescription="carousel" aria-label="Featured wildlife sightings">
+		if len(d.Items)>0 {
+			@HeroSlide(d.Hero, max(1, len(d.HeroSlides())))
+		} else {
+			<div class="hero-shade"></div>
+		}
+		<div class="hero-contours" aria-hidden="true"></div>
+		<div class="hero-content">
+			<span class="hero-kicker">
+				<span class="status-dot"></span> WONDER IS CLOSER THAN YOU THINK
+			</span>
+			<h2>
+				Stay curious.
+				<br/>
+				Go <em>wild.</em>
+			</h2>
+			<p>From the savannah to the open sea,<br/>discover the life that makes our planet remarkable.</p>
+			<a class="button button-cream" href="/sightings">
+				Discover sightings
+				@components.Icon("arrow")
+			</a>
+		</div>
+		<div hidden data-hero-slides>
+			for _,s:=range d.HeroSlides() {
+				<span data-photo={ Photo(s) } data-name={ Name(s.Species) } data-country={ s.Location.Country } data-url={ SightingURL(s) } data-credit={ PhotoCredit(s) }></span>
+			}
+		</div>
+	</section>
+	@Metrics(d)
+	<div class="dashboard-grid">
+		<section class="panel globe-panel">
+			<div class="panel-heading">
+				<div>
+					<span class="eyebrow">A WORLD OF DISCOVERY</span>
+					<h2>Wildlife knows no borders.</h2>
+					<p>{ d.Summary.Countries } countries. One extraordinary planet.</p>
+				</div>
+				<a class="round-link" href="/map" aria-label="Explore sightings on a map">
+					@components.Icon("arrow-up")
+				</a>
+			</div>
+			<div class="globe-stage">
+				<canvas data-globe aria-label="Animated three-dimensional globe" role="img"></canvas>
+				<span class="globe-coordinate">
+					PLANET EARTH
+					<br/>
+					<strong>Endlessly fascinating.</strong>
+				</span>
+				<span class="globe-orbit-label">EXPLORE · OBSERVE · DISCOVER</span>
+			</div>
+			<div class="globe-bottom">
+				<span>
+					<i class="status-dot"></i> { Number(d.Summary.Sightings) } moments in the wild
+				</span>
+				<a href="/map">
+					Find your next discovery
+					@components.Icon("arrow")
+				</a>
+			</div>
+		</section>
+		<section class="panel recent-panel">
+			<div class="panel-heading">
+				<div>
+					<span class="eyebrow">FROM THE FIELD</span>
+					<h2>Latest encounters</h2>
+				</div>
+				<a class="text-link" href="/sightings">
+					View all
+					@components.Icon("arrow")
+				</a>
+			</div>
+			<div class="recent-list">
+				if len(d.Items)==0 {
+					@EmptyState()
+				} else {
+					for _,s:=range d.Recent() {
+						@RecentRow(s)
+					}
+				}
+			</div>
+			<div class="recent-footnote">
+				@components.Icon("calendar")
+				Recorded moments, lasting discoveries.
+			</div>
+		</section>
+	</div>
+	<section class="featured-section">
+		<div class="section-heading">
+			<div>
+				<p class="eyebrow">MEET YOUR WILD NEIGHBOURS</p>
+				<h2>Remarkable by nature</h2>
+			</div>
+			<a href="/gallery" class="text-link">
+				Explore animal gallery
+				@components.Icon("arrow")
+			</a>
+		</div>
+		<div class="animal-grid featured-grid">
+			for _,a:=range d.Featured() {
+				@AnimalTile(a)
+			}
+		</div>
+	</section>
+	<aside class="curiosity-strip">
+		@components.Icon("leaf")
+		<p>
+			Look a little closer.<span>Every observation helps us understand and protect the natural world.</span>
+		</p>
+		<a href="/statistics" class="text-link">
+			See the bigger picture
+			@components.Icon("arrow")
+		</a>
+	</aside>
+}
+
+templ HeroSlide(s sighting.Sighting, total int) {
+	<div class="hero-slide" data-hero-current role="group" aria-roledescription="slide" aria-label={ fmt.Sprintf("1 of %d", total) }>
+		if Photo(s)!="" {
+			<img class="hero-image" data-hero-image src={ Photo(s) } alt={ Name(s.Species) + " photographed in the wild" } fetchpriority="high"/>
+		}
+		<div class="hero-shade"></div>
+		<a href={ templ.URL(SightingURL(s)) } class="hero-location" data-hero-link>
+			@components.Icon("pin")
+			<span><strong data-hero-name>{ Name(s.Species) }</strong><span data-hero-country>{ s.Location.Country }</span></span>
+			@components.Icon("arrow-up")
+		</a>
+		if Photo(s)!="" {
+			<a class="hero-credit" data-hero-credit href={ templ.URL(SightingURL(s) + "#photo-credits") }>{ "Photo: "+PhotoCredit(s)+" · Credits ↗" }</a>
+		}
+		<div class="hero-index" aria-hidden="true"><span data-hero-index>01</span> / { total } FIELD NOTES</div>
+	</div>
+}
+
+templ Metrics(d Collection) {
+	<section class="metrics" aria-label="Sightings at a glance">
+		@Metric("compass", Number(d.Summary.Sightings), "Total sightings", "Moments worth noticing", "green")
+		@Metric("leaf", Number(d.Summary.Species), "Species discovered", "Extraordinary by nature", "orange")
+		@Metric("globe", Number(d.Summary.Countries), "Countries explored", "A world of possibilities", "blue")
+		@Metric("camera", Number(d.Photos), "Photos captured", "The wild, through your lens", "purple")
+	</section>
+}
+
+templ Metric(icon string, value string, label string, note string, color string) {
+	<article class="metric">
+		<div class={ "metric-icon " + color }>
+			@components.Icon(icon)
+		</div>
+		<span class="metric-trend">
+			@components.Icon("arrow-up")
+		</span>
+		<strong class="metric-number">
+			{ value }
+		</strong>
+		<span class="metric-label">
+			{ label }
+		</span>
+		<small>
+			{ note }
+		</small>
+	</article>
+}
+
+templ Filters(d Collection) {
+	<form method="get" action={ templ.URL(d.Path) } class="filters" role="search" aria-label="Filter sightings">
+		<label class="search-field">
+			@components.Icon("search")
+			<span class="sr-only">Search animals, places or observers</span>
+			<input name="q" type="search" placeholder="Search the wild…" value={ d.Search }/>
+		</label>
+		<label>
+			<span class="sr-only">Animal</span>
+			<select name="animal">
+				<option value="">All animals</option>
+				for _,o:=range d.Animals {
+					<option value={ o.Value } selected?={ d.Animal==o.Value }>
+						{ o.Label }
+					</option>
+				}
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Country</span>
+			<select name="country">
+				<option value="">All countries</option>
+				for _,o:=range d.Countries {
+					<option value={ o.Value } selected?={ d.Country==o.Value }>
+						{ o.Label }
+					</option>
+				}
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Sort sightings</span>
+			<select name="sort">
+				<option value="newest" selected?={ d.Sort=="" || d.Sort=="newest" }>Newest first</option>
+				<option value="oldest" selected?={ d.Sort=="oldest" }>Oldest first</option>
+				<option value="animal" selected?={ d.Sort=="animal" }>Animal A–Z</option>
+			</select>
+		</label>
+		<button type="submit" class="button button-green">Apply filters</button>
+		if d.Animal!=""||d.Country!=""||d.Search!=""||d.Sort!="" {
+			<a class="filter-reset" href={ templ.URL(d.Path) }>Reset</a>
+		}
+	</form>
+}
+
+templ SightingTile(s sighting.Sighting) {
+	<article class="sighting-tile">
+		<a class="sighting-photo" href={ templ.URL(SightingURL(s)) } aria-label={ "View " + Name(s.Species) + " sighting" }>
+			@PhotoImage(s)
+			<span class="photo-date">
+				{ Date(s) }
+			</span>
+		</a>
+		<div class="sighting-info">
+			<a href={ templ.URL(SightingURL(s)) } class="sighting-title">
+				<h3>
+					{ Name(s.Species) }
+				</h3>
+				@components.Icon("arrow-up")
+			</a>
+			<p class="scientific">
+				{ Scientific(s.Species) }
+			</p>
+			<p class="location-line">
+				@components.Icon("pin")
+				<span>
+					{ Place(s.Location) }
+				</span>
+			</p>
+			<div class="sighting-bottom">
+				<span class="weather-tag">
+					@components.Icon("sun")
+					<span>{ WeatherText(s) }</span>
+				</span>
+				<a href={ templ.URL(AnimalURL(s.Species)) }>Animal guide ↗</a>
+			</div>
+		</div>
+	</article>
+}
+
+templ PhotoImage(s sighting.Sighting) {
+	if Photo(s)!="" {
+		<img src={ Photo(s) } alt={ Name(s.Species) } loading="lazy" decoding="async"/>
+	} else {
+		<div class="photo-placeholder">
+			@components.Icon("leaf")
+			<span>The wild leaves a little to the imagination.</span>
+		</div>
+	}
+}
+
+templ RecentRow(s sighting.Sighting) {
+	<a class="recent-row" href={ templ.URL(SightingURL(s)) }>
+		<span class="recent-image">
+			@PhotoImage(s)
+		</span>
+		<span class="recent-info">
+			<strong>
+				{ Name(s.Species) }
+			</strong>
+			<span>
+				@components.Icon("pin")
+				<span>{ s.Location.Country }</span>
+			</span>
+			<small>
+				{ Date(s) }
+				<span>· </span>{ WeatherText(s) }
+			</small>
+		</span>
+		<span class="recent-arrow">
+			@components.Icon("arrow-up")
+		</span>
+	</a>
+}
+
+templ AnimalTile(a AnimalCard) {
+	<a class="animal-tile" href={ templ.URL(AnimalURL(a.Species)) } data-tilt>
+		<div class="animal-photo">
+			@PhotoImage(a.Sighting)
+			if Photo(a.Sighting)!="" {
+				<span class="animal-photo-credit">{ PhotoCredit(a.Sighting) } · { LicenseName(CoverMedia(a.Sighting).License) }</span>
+			}
+			<span class="animal-count">{ a.Count } sightings</span>
+		</div>
+		<div class="animal-info">
+			<div>
+				<h3>
+					{ Name(a.Species) }
+				</h3>
+				<p>
+					{ Scientific(a.Species) }
+				</p>
+			</div>
+			<span class="animal-arrow">
+				@components.Icon("arrow-up")
+			</span>
+		</div>
+	</a>
+}
+
+templ EmptyState() {
+	<div class="empty-state">
+		@components.Icon("compass")
+		<h2>A new trail awaits.</h2>
+		<p>No sightings match this view. Try another animal, country or search.</p>
+		<a href="/sightings" class="button button-green">
+			Explore all sightings
+			@components.Icon("arrow")
+		</a>
+	</div>
+}
+
+templ Pagination(d Collection) {
+	if d.Pages>1 {
+		<nav class="pagination" aria-label="Sightings pages">
+			<span>
+				Showing { (d.Page-1)*12+1 }–{ min(d.Page*12,len(d.Items)) } of { Number(len(d.Items)) }
+			</span>
+			<div>
+				if d.Page>1 {
+					<a class="button button-light" href={ templ.URL(d.Link(d.Path, d.Page-1)) }>
+						@components.Icon("back")
+						Previous
+					</a>
+				}
+				<span>
+					{ d.Page } / { d.Pages }
+				</span>
+				if d.Page<d.Pages {
+					<a class="button button-light" href={ templ.URL(d.Link(d.Path, d.Page+1)) }>
+						Next
+						@components.Icon("arrow")
+					</a>
+				}
+			</div>
+		</nav>
+	}
+}
+
+templ SightingMap(items []sighting.Sighting, id string) {
+	<div class="map-container" id={ id } data-sightings-map data-points={ id + "-points" } role="region" aria-label="Interactive map of wildlife sightings">
+		<p class="map-fallback">The map is loading. Sighting details are also available below.</p>
+	</div>
+	<div id={ id + "-points" } class="map-data" hidden>
+		for _,s:=range items {
+			<span data-lat={ fmt.Sprintf("%f", s.Location.Latitude) } data-lng={ fmt.Sprintf("%f", s.Location.Longitude) } data-title={ Name(s.Species) } data-place={ Place(s.Location) } data-date={ Date(s) } data-url={ SightingURL(s) }></span>
+		}
+	</div>
+}
+
+templ Statistics(d Collection) {
+	@Metrics(d)
+	<div class="report-note">
+		@components.Icon("chart")
+		<p>Based on <strong>{ Number(d.Summary.Sightings) } observations</strong> matching your filters. Dates refer to when animals were observed.</p>
+	</div>
+	<section class="panel activity-panel">
+		<div class="panel-heading">
+			<div>
+				<span class="eyebrow">THROUGH THE SEASONS</span>
+				<h2>Sighting activity</h2>
+				<p>Observations by month · most recent 12 months with records</p>
+			</div>
+		</div>
+		if len(d.ByMonth)==0 {
+			@EmptyState()
+		} else {
+			<div class="month-chart" role="img" aria-label="Monthly sighting counts">
+				for _,r:=range d.ByMonth {
+					<div class="month-column">
+						<span class="month-value">
+							{ r.Count }
+						</span>
+						<div class="month-track">
+							<span class="month-bar" style={ templ.SafeCSS(BarStyle(r.Count, d.ByMonth)) }></span>
+						</div>
+						<span>
+							{ r.Name }
+						</span>
+					</div>
+				}
+			</div>
+		}
+	</section>
+	<div class="report-grid">
+		@Ranking("WILD LIFE IN FOCUS", "Most observed animals", d.ByAnimal, d.Summary.Sightings)
+		@Ranking("WHERE STORIES UNFOLD", "Sightings by country", d.ByCountry, d.Summary.Sightings)
+	</div>
+	<section class="report-summary">
+		<div>
+			<span class="eyebrow">OBSERVATION WINDOW</span>
+			if d.Summary.Sightings>0 {
+				<strong>
+					{ d.Summary.Earliest.Format("02 Jan 2006") }
+					<span>→ </span>{ d.Summary.Latest.Format("02 Jan 2006") }
+				</strong>
+			} else {
+				<strong>No observations yet</strong>
+			}
+		</div>
+		<div>
+			<span class="eyebrow">RECORDED INDIVIDUALS</span>
+			<strong>
+				{ Number(d.Summary.Individuals) }
+			</strong>
+			<small>Sum of reported counts; missing counts excluded.</small>
+		</div>
+		<div>
+			<span class="eyebrow">OBSERVER ENTRIES</span>
+			<strong>
+				{ Number(d.Summary.Recorders) }
+			</strong>
+			<small>Distinct recorded observer names or groups.</small>
+		</div>
+	</section>
+}
+
+templ Ranking(eyebrow string, title string, rows []sighting.Tally, total int) {
+	<section class="panel ranking">
+		<div class="panel-heading">
+			<div>
+				<span class="eyebrow">
+					{ eyebrow }
+				</span>
+				<h2>
+					{ title }
+				</h2>
+			</div>
+		</div>
+		<div class="ranking-rows">
+			if len(rows)==0 {
+				<p class="muted">No observations in this view.</p>
+			}
+			for i,r:=range rows {
+				<div class="ranking-row">
+					<span class="rank-number">
+						{ fmt.Sprintf("%02d",i+1) }
+					</span>
+					<div>
+						<div class="rank-label">
+							<strong>
+								{ r.Name }
+							</strong>
+							<span>
+								{ Number(r.Count) }
+								<small>({ Percent(r.Count,total) })</small>
+							</span>
+						</div>
+						<div class="rank-track">
+							<span style={ templ.SafeCSS(BarStyle(r.Count, rows)) }></span>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	</section>
+}
+
+func pageTitle(path string) string {
+	switch path {
+	case "/sightings":
+		return "Sightings"
+	case "/gallery":
+		return "Animal gallery"
+	case "/map":
+		return "Explore map"
+	case "/statistics":
+		return "Statistics"
+	}
+	return "Overview"
+}
+func pageEyebrow(path string) string {
+	switch path {
+	case "/sightings":
+		return "LIFE, AS IT HAPPENS"
+	case "/gallery":
+		return "EVERY ANIMAL HAS A STORY"
+	case "/map":
+		return "FOLLOW YOUR CURIOSITY"
+	}
+	return "THE BIGGER PICTURE"
+}
+func pageDescription(path string) string {
+	switch path {
+	case "/sightings":
+		return "Real encounters with the extraordinary. Find a moment that speaks to you."
+	case "/gallery":
+		return "Meet the faces of the wild, and discover what makes each one remarkable."
+	case "/map":
+		return "From familiar landscapes to faraway places. See where the wild comes alive."
+	}
+	return "A little perspective on the places, species and moments in our field journal."
 }

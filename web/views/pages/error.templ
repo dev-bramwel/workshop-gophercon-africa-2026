@@ -2,14 +2,46 @@ package pages
 
 import (
 	"strconv"
+	"workshop/web/views/components"
 	"workshop/web/views/layout"
 )
 
 templ Error(message string, code int) {
-	@layout.Base(layout.BaseProps{
-		Title: "Error " + strconv.Itoa(code),
-	}) {
-		<h1>{ strconv.Itoa(code) }</h1>
-		<p>{ message }</p>
+	@layout.Base(layout.BaseProps{Title: "A little off the trail"}) {
+		<section class="error-page">
+			<div class="error-landscape" aria-hidden="true">
+				<div class="error-orbit"></div>
+				<span>
+					{ strconv.Itoa(code) }
+				</span>
+				<div class="error-hill hill-one"></div>
+				<div class="error-hill hill-two"></div>
+				<div class="error-tree">♠</div>
+			</div>
+			<p class="eyebrow">A LITTLE OFF THE BEATEN PATH</p>
+			if code==404 {
+				<h1>
+					Even explorers get lost<span class="accent-dot">.</span>
+				</h1>
+			} else {
+				<h1>
+					A pause on the trail<span class="accent-dot">.</span>
+				</h1>
+			}
+			<p>
+				{ message }
+			</p>
+			<p class="muted">There’s still a whole wild world waiting for you.</p>
+			<div class="error-actions">
+				<a class="button button-green" href="/">
+					@components.Icon("back")
+					Back to the overview
+				</a>
+				<a class="button button-light" href="/sightings">
+					Discover sightings
+					@components.Icon("arrow")
+				</a>
+			</div>
+		</section>
 	}
 }
