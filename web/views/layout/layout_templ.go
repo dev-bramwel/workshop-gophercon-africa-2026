@@ -46,7 +46,7 @@ func Base(props BaseProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"icon\" href=\"/assets/images/mark.svg\" type=\"image/svg+xml\"><link rel=\"stylesheet\" href=\"/assets/vendor/leaflet/leaflet.css\"><link rel=\"stylesheet\" href=\"/assets/css/app.css\"><script src=\"/assets/vendor/leaflet/leaflet.js\" defer></script><script src=\"/assets/js/app.js\" defer></script></head><body><a class=\"skip-link\" href=\"#main\">Skip to content</a><aside class=\"sidebar\"><a href=\"/\" class=\"brand\" aria-label=\"Wildlens home\"><span class=\"brand-mark\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"icon\" href=\"/assets/images/mark.svg\" type=\"image/svg+xml\"><link rel=\"stylesheet\" href=\"/assets/vendor/leaflet/leaflet.css\"><link rel=\"stylesheet\" href=\"/assets/css/app.css\"><script src=\"/assets/vendor/leaflet/leaflet.js\" defer></script><script src=\"/assets/js/app.js\" defer></script><script src=\"/assets/js/hero-carousel.js\" defer></script></head><body><a class=\"skip-link\" href=\"#main\">Skip to content</a><aside class=\"sidebar\"><a href=\"/\" class=\"brand\" aria-label=\"Wildlens home\"><span class=\"brand-mark\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

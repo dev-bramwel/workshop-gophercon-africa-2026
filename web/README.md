@@ -30,6 +30,13 @@ Map tiles come from OpenStreetMap and observation photos from their original
 providers; these need internet access. Maps retain their record links and card
 alternatives if tiles fail. Fonts use Google Fonts with local system fallbacks.
 
+The dashboard hero changes photographed animals every 10 seconds with a 1.2-second
+crossfade and gentle drift, keeping
+the photo, location, record link and attribution together. It preloads only the
+next photo, waits for decoding, and pauses on hover, keyboard focus, hidden tabs
+or when offscreen. Hover lets an ongoing transition finish.
+The motion toggle and system reduced-motion preference also pause rotation.
+
 The globe uses Canvas 2D to project a rotating 3D sphere, without a WebGL dependency.
 Its outlines and accent dots are decorative; `/map` plots the actual records.
 Pointer effects run only on devices with a fine pointer. Animations respect
@@ -42,3 +49,4 @@ Photographer credits, licence links and original images are available on detail
 pages. No database migration or API key is required.
 
 Validation: `go test ./...`; focused view and handler checks: `go test ./web/...`.
+Carousel timing and pause checks: `node web/tests/hero-carousel.test.cjs`.

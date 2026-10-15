@@ -3565,3 +3565,33 @@ strong {
 		margin-left:0;
 	}
 }
+
+/* Keep the old photo underneath the fade so the hero never exposes its backdrop. */
+.hero-slide {
+ position:absolute;
+ inset:0;
+ z-index:0;
+ isolation:isolate;
+}
+.hero-slide .hero-image { z-index:-2; }
+.hero-slide .hero-shade { z-index:-1; }
+.hero[data-hero-carousel] .hero-content { z-index:2; pointer-events:none; }
+.hero[data-hero-carousel] .hero-content a { pointer-events:auto; }
+.hero[data-hero-carousel] .hero-contours { z-index:1; pointer-events:none; }
+.hero-slide.is-leaving,
+.hero-slide.is-entering {
+ will-change:transform,opacity;
+ animation-duration:1200ms;
+ animation-timing-function:cubic-bezier(.45,0,.25,1);
+ animation-fill-mode:both;
+}
+.hero-slide.is-leaving { animation-name:hero-slide-out; }
+.hero-slide.is-entering { animation-name:hero-slide-in; }
+@keyframes hero-slide-out {
+ from { transform:translateX(0) scale(1); }
+ to { transform:translateX(-1.5%) scale(1.04); }
+}
+@keyframes hero-slide-in {
+ from { opacity:0; transform:translateX(2%) scale(1.04); }
+ to { opacity:1; transform:translateX(0) scale(1); }
+}
